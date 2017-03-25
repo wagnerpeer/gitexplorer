@@ -87,3 +87,10 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Eclipse & PyDev project settings
+/.project
+/.pydevproject
+
+# Markdown generated html
+*.md.html
