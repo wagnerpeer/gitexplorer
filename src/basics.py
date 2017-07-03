@@ -10,6 +10,8 @@ import pprint
 import re
 import subprocess
 
+import pymongo
+
 
 def process_details(changes):
 
@@ -104,7 +106,10 @@ def get_log_information(directory):
 
 
 def main(directory):
-    pprint.pprint(get_log_information(directory))
+    client = pymongo.MongoClient()
+    ge_database = client.gitexplorer_database
+    commit_collection = ge_database.commit_collection
+    commit_collection.insert_many(get_log_information(directory))
 
 
 if(__name__ == '__main__'):
