@@ -6,63 +6,78 @@ Created on 27.06.2017
 
 import datetime
 import os
-import pprint
+import pathlib
+from pprint import pprint as pp
 import re
 import subprocess
 
 import pymongo
 
+PATH_RENAME = re.compile('^(?P<prefix>[^{]*){?(?P<old>.*) => (?P<new>[^}]*)}?(?P<suffix>.*)$')
+TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
+                                   '$': '\uff04'})
+
+
+def mongodb_escape(input_string):
+    return input_string.translate(TRANSLATION_TABLE)
+
 
 def process_details(changes):
 
-    details_dict = {b'create': {},
-                    b'delete': {},
-                    b'rename': [],
-                    b'change': {},
-                    b'modifications': {}}
+    details_dict = {'create': {},
+                    'delete': {},
+                    'rename': [],
+                    'change': {},
+                    'modifications': {}}
 
     for line in changes:
         if(line):
-            line = line.strip(b' \n')
-            pprint.pprint(line)
+            line = line.strip(' \n')
+            if(line.startswith(('create', 'delete'))):
+                action, _, permission, file_path = line.split(' ', maxsplit=3)
+                create_delete = {'permission': int(permission)}
+                if(action == 'create'):
+                    create_delete['extension'] = pathlib.PurePath(file_path).suffix
+                details_dict[action][mongodb_escape(file_path)] = create_delete
+            elif(line.startswith('rename')):
+                action, paths_and_match = line.split(' ', maxsplit=1)
+                paths_combined, match = paths_and_match.rsplit(' ', maxsplit=1)
 
-            if(line.startswith((b'create', b'delete'))):
-                action, _, permission, filename = line.split(b' ', maxsplit=3)
-                details_dict[action][filename] = {'permission': int(permission)}
-            elif(line.startswith(b'rename')):
-                action, paths_and_match = line.split(b' ', maxsplit=1)
-                paths_combined, match = paths_and_match.rsplit(b' ', maxsplit=1)
+                paths_match = PATH_RENAME.search(paths_combined)
+                old_file_path = paths_match.group('prefix') + paths_match.group('old') + paths_match.group('suffix')
+                new_file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
-                paths_match = re.search(b'(?P<prefix>.*){?(?P<old>.*) => (?P<new>.*)}?(?P<suffix>.*)', paths_combined)
-                old_path = paths_match.group('prefix') + paths_match.group('old') + paths_match.group('suffix')
-                new_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
+                rename = {'new_path': mongodb_escape(new_file_path),
+                          'extension': pathlib.PurePath(new_file_path).suffix,
+                          'old_path': mongodb_escape(old_file_path),
+                          'match': int(match.strip('(%)'))}
+                details_dict['rename'].append(rename)
+            elif(line.startswith('mode change')):
+                _, action, permission_change_and_filename = line.split(' ', maxsplit=2)
+                permission_change, file_path = permission_change_and_filename.rsplit(' ', maxsplit=1)
 
-                rename = {b'new_path': new_path,
-                          b'old_path': old_path,
-                          b'match': int(match.strip(b'(%)'))}
-                details_dict[b'rename'].append(rename)
-            elif(line.startswith(b'mode change')):
-                _, action, permission_change_and_filename = line.split(b' ', maxsplit=2)
-                permission_change, filename = permission_change_and_filename.rsplit(b' ', maxsplit=1)
-
-                permission_change_match = re.search(b'(?P<old_permission>\d*) => (?P<new_permission>\d*)', permission_change)
+                permission_change_match = re.search('(?P<old_permission>\d*) => (?P<new_permission>\d*)', permission_change)
                 old_permission = permission_change_match.group('old_permission')
                 new_permission = permission_change_match.group('new_permission')
 
-                change = {b'old_permission': int(old_permission),
-                          b'new_permission': int(new_permission)}
+                change = {'old_permission': int(old_permission),
+                          'new_permission': int(new_permission)}
 
-                details_dict[b'change'][filename] = change
+                details_dict['change'][mongodb_escape(file_path)] = change
             else:
-                additions, deletions, filename = line.split(b'\t', maxsplit=2)
+                additions, deletions, file_path = line.split('\t', maxsplit=2)
 
-                if(additions == b'-'):
-                    modifications = {b'additions': None,
-                                     b'deletions': None}
+                if('=>' in file_path):
+                    paths_match = PATH_RENAME.search(file_path)
+                    file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
+
+                if(additions == '-'):
+                    modifications = {'additions': None,
+                                     'deletions': None}
                 else:
-                    modifications = {b'additions': int(additions),
-                                     b'deletions': int(deletions)}
-                details_dict[b'modifications'][filename] = modifications
+                    modifications = {'additions': int(additions),
+                                     'deletions': int(deletions)}
+                details_dict['modifications'][mongodb_escape(file_path)] = modifications
 
     return details_dict
 
@@ -70,11 +85,10 @@ def process_details(changes):
 def process_commit(commit):
     commit_dict = {}
 
-    lines = commit.split(b'\n')
+    lines = commit.split('\n')
 
     if(lines):
-        pprint.pprint(lines[0])
-        commit_hash, author_name, author_mail, author_time = lines[0].split(b'\t')
+        commit_hash, author_name, author_mail, author_time = lines[0].split('\t')
 
         commit_dict['commit_hash'] = commit_hash
         commit_dict['author'] = author_name
@@ -91,14 +105,12 @@ def get_log_information(directory):
 
     os.chdir(directory)
 
-    git_log_process = subprocess.Popen('git log --numstat --abbrev=40 --summary --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"',
-                                       stdout=subprocess.PIPE)
-    commits = git_log_process.communicate()[0]
+    commits = subprocess.check_output('git log --numstat --abbrev=40 --summary --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"',
+                                      stderr=subprocess.STDOUT).decode("utf-8")
 
     commit_objects = []
 
-    for commit in commits.split(b'<gitexplorer>'):
-        print()
+    for commit in commits.split('<gitexplorer>'):
         if(commit):
             commit_objects.append(process_commit(commit))
 
@@ -106,6 +118,7 @@ def get_log_information(directory):
 
 
 def main(directory):
+#     pp(get_log_information(directory))
     client = pymongo.MongoClient()
     ge_database = client.gitexplorer_database
     commit_collection = ge_database.commit_collection
