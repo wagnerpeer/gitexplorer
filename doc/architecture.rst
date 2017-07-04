@@ -22,3 +22,37 @@ that this architecture can be improved.
     :align: center
     
     **Figure 2:** Architecture for gitexplorer having extensibility as a basic design element.
+
+::
+    {commit_hash: <commit_hash>,
+     author: <name>,
+     mail: <mail>,
+     date: <date>,
+     details: {
+         create: {
+             <file_path>: {
+                 permission: <unix_file_permission>,
+                 extension: <.extension>}
+             },
+         delete: {
+             <file_path>: {
+                 permission: <unix_file_permission>
+             }
+         },
+         rename: [
+             {new_path: <file_path>,
+              extension: <.extension>,
+              old_path: <file_path>,
+              match: <match_percentage>}
+         ],
+         change: {
+             <file_path>: {
+                 old_permission: <unix_file_permission>,
+                 new_permission: <unix_file_permission>}},
+         modifications: {
+             <file_path>: {
+                 additions: <#additions>,
+                 deletions: <#deletions>
+             }
+         }
+     }
