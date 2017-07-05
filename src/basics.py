@@ -141,19 +141,20 @@ def get_log_information(directory, after='', before='HEAD'):
     return commit_objects
 
 
-def get_basic_collection():
-    '''Returns the MongoDB collection to derive most statistics from.
+def get_gitexplorer_database():
+    '''Returns the MongoDB for gitexplorer.
 
-    The collection can be used as basis for specialized collections from which one can derive elevated statistics.
+    The collections inside the database can be used as basis for specialized collections
+    from which one can derive elevated statistics. Results can also be written into the
+    database to be accessible by visualization routines.
     '''
     client = pymongo.MongoClient()
-    ge_database = client.gitexplorer_database
-    return ge_database.commit_collection
+    return client.gitexplorer_database
 
 
 def main(directory):
-    commit_collection = get_basic_collection()
-    commit_collection.insert_many(get_log_information(directory))
+    gitexplorer_database = get_gitexplorer_database()
+    gitexplorer_database.commit_collection.insert_many(get_log_information(directory))
 
 
 if(__name__ == '__main__'):
