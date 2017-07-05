@@ -18,11 +18,11 @@ TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
                                    '$': '\uff04'})
 
 
-def mongodb_escape(input_string):
+def _mongodb_escape(input_string):
     return input_string.translate(TRANSLATION_TABLE)
 
 
-def process_details(changes):
+def _process_details(changes):
 
     details_dict = {'create': {},
                     'delete': {},
@@ -38,7 +38,7 @@ def process_details(changes):
                 create_delete = {'permission': int(permission)}
                 if(action == 'create'):
                     create_delete['extension'] = pathlib.PurePath(file_path).suffix
-                details_dict[action][mongodb_escape(file_path)] = create_delete
+                details_dict[action][_mongodb_escape(file_path)] = create_delete
             elif(line.startswith('rename')):
                 action, paths_and_match = line.split(' ', maxsplit=1)
                 paths_combined, match = paths_and_match.rsplit(' ', maxsplit=1)
@@ -47,9 +47,9 @@ def process_details(changes):
                 old_file_path = paths_match.group('prefix') + paths_match.group('old') + paths_match.group('suffix')
                 new_file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
-                rename = {'new_path': mongodb_escape(new_file_path),
+                rename = {'new_path': _mongodb_escape(new_file_path),
                           'extension': pathlib.PurePath(new_file_path).suffix,
-                          'old_path': mongodb_escape(old_file_path),
+                          'old_path': _mongodb_escape(old_file_path),
                           'match': int(match.strip('(%)'))}
                 details_dict['rename'].append(rename)
             elif(line.startswith('mode change')):
@@ -63,8 +63,8 @@ def process_details(changes):
                 change = {'old_permission': int(old_permission),
                           'new_permission': int(new_permission)}
 
-                details_dict['change'][mongodb_escape(file_path)] = change
-            else:
+                details_dict['change'][_mongodb_escape(file_path)] = change
+            elif(line[0] in '1234567890-'):
                 additions, deletions, file_path = line.split('\t', maxsplit=2)
 
                 if('=>' in file_path):
@@ -77,12 +77,12 @@ def process_details(changes):
                 else:
                     modifications = {'additions': int(additions),
                                      'deletions': int(deletions)}
-                details_dict['modifications'][mongodb_escape(file_path)] = modifications
+                details_dict['modifications'][_mongodb_escape(file_path)] = modifications
 
     return details_dict
 
 
-def process_commit(commit):
+def _process_commit(commit):
     commit_dict = {}
 
     lines = commit.split('\n')
@@ -96,32 +96,41 @@ def process_commit(commit):
         commit_dict['date'] = datetime.datetime.utcfromtimestamp(float(author_time))
 
         if(lines[1:]):
-            commit_dict['details'] = process_details(lines[1:])
+            commit_dict['details'] = _process_details(lines[1:])
 
     return commit_dict
 
 
-def get_log_information(directory):
+def get_log_information(directory, after='', before='HEAD'):
 
     os.chdir(directory)
 
-    commits = subprocess.check_output('git log --numstat --abbrev=40 --summary --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"',
+    if(after):
+        after = ' --after={after}'.format(**locals())
+
+    if(before):
+        before = ' --before={before}'.format(**locals())
+
+    commits = subprocess.check_output('git log --numstat --abbrev=40 --summary --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"' + after + before,
                                       stderr=subprocess.STDOUT).decode("utf-8")
 
     commit_objects = []
 
     for commit in commits.split('<gitexplorer>'):
         if(commit):
-            commit_objects.append(process_commit(commit))
+            commit_objects.append(_process_commit(commit))
 
     return commit_objects
 
 
-def main(directory):
-#     pp(get_log_information(directory))
+def get_basic_collection():
     client = pymongo.MongoClient()
     ge_database = client.gitexplorer_database
-    commit_collection = ge_database.commit_collection
+    return ge_database.commit_collection
+
+
+def main(directory):
+    commit_collection = get_basic_collection()
     commit_collection.insert_many(get_log_information(directory))
 
 
