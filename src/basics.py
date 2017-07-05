@@ -16,11 +16,16 @@ import pymongo
 PATH_RENAME = re.compile('^(?P<prefix>[^{]*){?(?P<old>.*) => (?P<new>[^}]*)}?(?P<suffix>.*)$')
 TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
                                    '$': '\uff04'})
+INVERSE_TRANSLATION_TABLE = str.maketrans({'\uff0e': '.',
+                                           '\uff04': '$'})
 
 
 def _mongodb_escape(input_string):
     return input_string.translate(TRANSLATION_TABLE)
 
+
+def _mongodb_unescape(input_string):
+    return input_string.translate(INVERSE_TRANSLATION_TABLE)
 
 def _process_details(changes):
 
