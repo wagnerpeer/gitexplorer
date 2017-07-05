@@ -57,9 +57,30 @@ def _commits_by_hour_of_day():
     gitexplorer_database.result_commits_by_hour_of_day.insert_one(document)
 
 
+def _commits_by_date():
+    gitexplorer_database = get_gitexplorer_database()
+
+    projection = {'$project': {'date': '$date'}}
+    group = {'$group': {'_id': {'$dateToString': {'format': '%Y-%m-%d',
+                                                  'date': '$date'}},
+                        'total_commits': {'$sum': 1}}}
+
+    pipeline = [projection, group]
+
+    result = gitexplorer_database.commit_collection.aggregate(pipeline)
+
+    document = {'commits_by_date': [{'date': item['_id'],
+                                     'total_commits': item['total_commits']}
+                                    for item in result]}
+
+    gitexplorer_database.result_commits_by_date.drop()
+    gitexplorer_database.result_commits_by_date.insert_one(document)
+
+
 def main():
     _commits_by_weekday()
     _commits_by_hour_of_day()
+    _commits_by_date()
 
 
 if(__name__ == '__main__'):
