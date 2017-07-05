@@ -4,6 +4,7 @@ Created on 27.06.2017
 @author: Peer
 '''
 
+import argparse
 import datetime
 import os
 import pathlib
@@ -27,23 +28,25 @@ def _mongodb_escape(input_string):
 def _mongodb_unescape(input_string):
     return input_string.translate(INVERSE_TRANSLATION_TABLE)
 
+
 def _process_details(changes):
 
-    details_dict = {'create': {},
-                    'delete': {},
+    details_dict = {'create': [],
+                    'delete': [],
                     'rename': [],
                     'change': {},
-                    'modifications': {}}
+                    'modifications': []}
 
     for line in changes:
         if(line):
             line = line.strip(' \n')
             if(line.startswith(('create', 'delete'))):
                 action, _, permission, file_path = line.split(' ', maxsplit=3)
-                create_delete = {'permission': int(permission)}
+                create_delete = {'permission': int(permission),
+                                 'file_path': _mongodb_escape(file_path)}
                 if(action == 'create'):
                     create_delete['extension'] = pathlib.PurePath(file_path).suffix
-                details_dict[action][_mongodb_escape(file_path)] = create_delete
+                details_dict[action].append(create_delete)
             elif(line.startswith('rename')):
                 action, paths_and_match = line.split(' ', maxsplit=1)
                 paths_combined, match = paths_and_match.rsplit(' ', maxsplit=1)
@@ -80,9 +83,10 @@ def _process_details(changes):
                     modifications = {'additions': None,
                                      'deletions': None}
                 else:
-                    modifications = {'additions': int(additions),
+                    modifications = {'file_path': _mongodb_escape(file_path),
+                                     'additions': int(additions),
                                      'deletions': int(deletions)}
-                details_dict['modifications'][_mongodb_escape(file_path)] = modifications
+                details_dict['modifications'].append(modifications)
 
     return details_dict
 
@@ -159,6 +163,7 @@ def get_gitexplorer_database():
 
 def main(directory):
     gitexplorer_database = get_gitexplorer_database()
+    gitexplorer_database.commit_collection.drop()
     gitexplorer_database.commit_collection.insert_many(get_log_information(directory))
 
 
