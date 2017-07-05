@@ -102,7 +102,25 @@ def _process_commit(commit):
 
 
 def get_log_information(directory, after='', before='HEAD'):
+    '''Runs a "git log" command in the given directory and returns the parsed information.
 
+    Parameters
+    ----------
+    directory : str
+        Path to git repository
+    after : str, optional
+        Valid git date format
+    before : str, optional
+        Valid git date format
+
+    Returns
+    -------
+    commit_objects : list
+
+    Notes
+    -----
+    For a detailed description of the return format please refer to the documentation of gitexplorer.
+    '''
     os.chdir(directory)
 
     if(after):
@@ -124,6 +142,10 @@ def get_log_information(directory, after='', before='HEAD'):
 
 
 def get_basic_collection():
+    '''Returns the MongoDB collection to derive most statistics from.
+
+    The collection can be used as basis for specialized collections from which one can derive elevated statistics.
+    '''
     client = pymongo.MongoClient()
     ge_database = client.gitexplorer_database
     return ge_database.commit_collection
