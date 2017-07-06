@@ -47,7 +47,6 @@ def _additions_deletions_commits_by_file_path():
                                                               'total_deletions': item['total_deletions']}
                                                              for item in result]}
 
-#     print(document)
     gitexplorer_database.result_additions_deletions_commits_by_file_path.drop()
     gitexplorer_database.result_additions_deletions_commits_by_file_path.insert_one(document)
 
