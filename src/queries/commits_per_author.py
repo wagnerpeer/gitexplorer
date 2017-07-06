@@ -39,7 +39,6 @@ def _commits_per_author():
     gitexplorer_database.result_commits_per_author.insert_one(document)
 
 
-
 def main():
     _commits_per_author()
 
