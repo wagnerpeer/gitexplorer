@@ -169,5 +169,6 @@ def main(directory):
 
 if(__name__ == '__main__'):
     directory = os.getcwd()
+    directory = r'C:\Users\Peer\workspace\Pydev'
 
     main(directory)

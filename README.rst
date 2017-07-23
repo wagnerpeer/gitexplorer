@@ -8,6 +8,7 @@ Being a fairly new project neither all requirements are written nor are implemen
 In the future the starting point for all interaction with the package gitexplorer will start with:
 
 .. code-block:: python
+
     import gitexplorer as ge
 
 So stay tuned ...
