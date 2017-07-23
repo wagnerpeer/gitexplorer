@@ -1,7 +1,11 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+*~
 *.py[cod]
-*$py.class
+!setup.cfg
+*.orig
+__pycache__/*
+.cache/*
+.*.swp
 
 # C extensions
 *.so
@@ -40,6 +44,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+junit.xml
 nosetests.xml
 coverage.xml
 *,cover
@@ -61,7 +66,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/_build/*
 
 # PyBuilder
 target/
@@ -91,6 +96,12 @@ ENV/
 # Eclipse & PyDev project settings
 /.project
 /.pydevproject
+.settings
 
 # Markdown generated html
 *.md.html
+
+# Build and docs folder/files
+docs/api/*
+cover/*
+MANIFEST
