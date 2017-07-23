@@ -138,7 +138,7 @@ def get_log_information(directory, after='', before='HEAD'):
     if(before):
         before = ' --before={before}'.format(**locals())
 
-    commits = subprocess.check_output('git log --all --numstat --abbrev=40 --summary --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"' + after + before,
+    commits = subprocess.check_output('git log --all --numstat --abbrev=40 --summary --find-renames --reverse --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"' + after + before,
                                       stderr=subprocess.STDOUT).decode("utf-8")
 
     commit_objects = []
@@ -169,6 +169,5 @@ def main(directory):
 
 if(__name__ == '__main__'):
     directory = os.getcwd()
-    directory = r'C:\Users\Peer\workspace\Pydev'
 
     main(directory)
