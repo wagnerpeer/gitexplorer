@@ -167,7 +167,18 @@ def main(directory):
     gitexplorer_database.commit_collection.insert_many(get_log_information(directory))
 
 
-if(__name__ == '__main__'):
-    directory = os.getcwd()
+def _get_arguments():
+    parser = argparse.ArgumentParser(description='Parse configuration parameters for gitexplorer from command line arguments.')
+    parser.add_argument('directory',
+                        metavar='DIR',
+                        type=str,
+                        help='The repository to run gitexplorer in.')
 
-    main(directory)
+    return parser.parse_args()
+
+
+if(__name__ == '__main__'):
+
+    args = _get_arguments()
+
+    main(args.directory)
