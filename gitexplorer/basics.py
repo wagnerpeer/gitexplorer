@@ -53,9 +53,8 @@ def _process_details(changes):
             if(line.startswith(('create', 'delete'))):
                 action, _, permission, file_path = line.split(' ', maxsplit=3)
                 create_delete = {'permission': int(permission),
-                                 'file_path': _mongodb_escape(file_path)}
-                if(action == 'create'):
-                    create_delete['extension'] = pathlib.PurePath(file_path).suffix
+                                 'file_path': _mongodb_escape(file_path),
+                                 'extension': pathlib.PurePath(file_path).suffix}
                 details_dict[action].append(create_delete)
             elif(line.startswith('rename')):
                 action, paths_and_match = line.split(' ', maxsplit=1)
@@ -66,8 +65,9 @@ def _process_details(changes):
                 new_file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
                 rename = {'new_path': _mongodb_escape(new_file_path),
-                          'extension': pathlib.PurePath(new_file_path).suffix,
+                          'new_extension': pathlib.PurePath(new_file_path).suffix,
                           'old_path': _mongodb_escape(old_file_path),
+                          'old_extension': pathlib.PurePath(old_file_path).suffix,
                           'match': int(match.strip('(%)'))}
                 details_dict['rename'].append(rename)
             elif(line.startswith('mode change')):
