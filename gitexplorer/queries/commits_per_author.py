@@ -24,19 +24,12 @@ def _commits_per_author():
     projection = {'$project': {'author': '$author',
                                'commit_hash': '$commit_hash'}}
     group = {'$group': {'_id': '$author',
-                        'total_commits': {'$sum': 1}}}
+                        'total_commits': {'$sum': 1},
+                        'commits': {'$push': '$commit_hash'}}}
+    out = {'$out': 'result_commits_per_author'}
+    pipeline = [projection, group, out]
 
-    pipeline = [projection, group]
-
-    result = gitexplorer_database.commit_collection.aggregate(pipeline)
-
-    document = {'additions_deletions_commits_by_file_path': [{'author': item['_id'],
-                                                              'total_commits': item['total_commits']}
-                                                             for item in result]}
-
-#     print(document)
-    gitexplorer_database.result_commits_per_author.drop()
-    gitexplorer_database.result_commits_per_author.insert_one(document)
+    gitexplorer_database.commit_collection.aggregate(pipeline)
 
 
 def main():

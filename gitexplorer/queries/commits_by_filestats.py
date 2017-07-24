@@ -36,19 +36,10 @@ def _additions_deletions_commits_by_file_path():
                         'total_commits': {'$sum': 1},
                         'total_additions': {'$sum': '$additions'},
                         'total_deletions': {'$sum': '$deletions'}}}
+    out = {'$out': 'result_additions_deletions_commits_by_file_path'}
+    pipeline = [unwind, projection, group, out]
 
-    pipeline = [unwind, projection, group]
-
-    result = gitexplorer_database.commit_collection.aggregate(pipeline)
-
-    document = {'additions_deletions_commits_by_file_path': [{'file_path': item['_id'],
-                                                              'total_commits': item['total_commits'],
-                                                              'total_additions': item['total_additions'],
-                                                              'total_deletions': item['total_deletions']}
-                                                             for item in result]}
-
-    gitexplorer_database.result_additions_deletions_commits_by_file_path.drop()
-    gitexplorer_database.result_additions_deletions_commits_by_file_path.insert_one(document)
+    gitexplorer_database.commit_collection.aggregate(pipeline)
 
 
 def main():

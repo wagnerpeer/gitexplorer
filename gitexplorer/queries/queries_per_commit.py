@@ -18,66 +18,45 @@ def get_gitexplorer_database():
     return client.gitexplorer_database
 
 
-def _additions_deletions_lines_per_commit():
+def _additions_deletions_lines_files_per_commit():
     gitexplorer_database = get_gitexplorer_database()
 
     unwind = {'$unwind': '$details.modifications'}
     projection = {'$project': {'commit_hash': '$commit_hash',
                                'date': '$date',
-                               'additions': '$details.modifications.additions',
-                               'deletions': '$details.modifications.deletions'}}
+                               'modifications': '$details.modifications'}}
     group = {'$group': {'_id': '$commit_hash',
                         'date': {'$first': '$date'},
-                        'additions': {'$sum': '$additions'},
-                        'deletions': {'$sum': '$deletions'},
-                        'total_modifications': {'$sum': 1}}}
+                        'total_additions': {'$sum': '$modifications.additions'},
+                        'total_deletions': {'$sum': '$modifications.deletions'},
+                        'total_modifications': {'$sum': 1},
+                        'file_paths': {'$push': '$modifications.file_path'},
+                        'total_lines': {'$sum': {'$subtract': ['$modifications.additions',
+                                                               '$modifications.deletions']}}}}
+    out = {'$out': 'result_additions_deletions_lines_files_per_commit'}
+    pipeline = [unwind, projection, group, out]
 
-    pipeline = [unwind, projection, group]
-
-    result = gitexplorer_database.commit_collection.aggregate(pipeline)
-
-    document = {'additions_deletions_lines_per_commit': [{'commit_hash': item['_id'],
-                                                          'date': item['date'],
-                                                          'additions': item['additions'],
-                                                          'deletions': item['deletions'],
-                                                          'lines': item['additions'] - item['deletions'],
-                                                          'total_modifications': item['total_modifications']}
-                                                         for item in result]}
-
-#     print(document)
-    gitexplorer_database.result_additions_deletions_lines_per_commit.drop()
-    gitexplorer_database.result_additions_deletions_lines_per_commit.insert_one(document)
+    gitexplorer_database.commit_collection.aggregate(pipeline)
 
 
-def _additions_deletions_lines_by_date():
+def _additions_deletions_lines_commits_by_date():
     gitexplorer_database = get_gitexplorer_database()
 
-    unwind = {'$unwind': '$additions_deletions_lines_per_commit'}
-    projection = {'$project': {'date': '$additions_deletions_lines_per_commit.date',
-                               'additions': '$additions_deletions_lines_per_commit.additions',
-                               'deletions': '$additions_deletions_lines_per_commit.deletions'}}
     group = {'$group': {'_id': {'$dateToString': {'format': '%Y-%m-%d',
                                                   'date': '$date'}},
-                        'total_additions': {'$sum': '$additions'},
-                        'total_deletions': {'$sum': '$deletions'}}}
+                        'date': {'$first': '$date'},
+                        'total_additions': {'$sum': '$total_additions'},
+                        'total_deletions': {'$sum': '$total_deletions'},
+                        'total_commits': {'$sum': 1}}}
+    out = {'$out': 'result_additions_deletions_lines_commits_by_date'}
+    pipeline = [group, out]
 
-    pipeline = [unwind, projection, group]
-
-    result = gitexplorer_database.result_additions_deletions_lines_per_commit.aggregate(pipeline)
-
-    document = {'lines_by_date': [{'date': item['_id'],
-                                   'total_additions': item['total_additions'],
-                                   'total_deletions': item['total_deletions'],
-                                   'total_lines': item['total_additions'] - item['total_deletions']}
-                                  for item in result]}
-
-    gitexplorer_database.result_lines_by_date.drop()
-    gitexplorer_database.result_lines_by_date.insert_one(document)
+    gitexplorer_database.result_additions_deletions_lines_files_per_commit.aggregate(pipeline)
 
 
 def main():
-    _additions_deletions_lines_per_commit()
-    _additions_deletions_lines_by_date()
+    _additions_deletions_lines_files_per_commit()
+    _additions_deletions_lines_commits_by_date()
 
 
 if(__name__ == '__main__'):

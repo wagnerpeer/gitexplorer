@@ -32,13 +32,10 @@ def _authors_per_file_path():
                                                     "date": "$date",
                                                     "additions": "$additions",
                                                     "deletions": "$deletions"}}}}
-    projection2 = {'$project': {'_id': False,
-                                'file_path': '$_id',
-                                'modifications': '$modifications'}}
 
     out = {'$out': 'result_authors_per_file_path'}
 
-    pipeline = [unwind, projection, group, projection2, out]
+    pipeline = [unwind, projection, group, out]
 
     gitexplorer_database.commit_collection.aggregate(pipeline)
 
