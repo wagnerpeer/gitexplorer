@@ -5,6 +5,7 @@ Created on 27.06.2017
 '''
 
 import argparse
+from bson.code import Code
 import datetime
 import os
 import pathlib
@@ -27,6 +28,15 @@ def _mongodb_escape(input_string):
 
 def _mongodb_unescape(input_string):
     return input_string.translate(INVERSE_TRANSLATION_TABLE)
+
+
+def _get_code(file_name):
+    current_working_directory = pathlib.Path(os.getcwd())
+
+    with (current_working_directory / file_name).open(mode='r') as fid:
+        code = fid.read()
+
+    return Code(code)
 
 
 def _process_details(changes):
