@@ -80,7 +80,8 @@ def _process_details(changes):
                     file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
                 if(additions == '-'):
-                    modifications = {'additions': None,
+                    modifications = {'file_path': _mongodb_escape(file_path),
+                                     'additions': None,
                                      'deletions': None}
                 else:
                     modifications = {'file_path': _mongodb_escape(file_path),
