@@ -18,7 +18,7 @@ def get_gitexplorer_database():
     return client.gitexplorer_database
 
 
-def _additions_deletions_lines_files_per_commit():
+def _additions_deletions_lines_modifications_per_commit():
     gitexplorer_database = get_gitexplorer_database()
 
     unwind = {'$unwind': '$details.modifications'}
@@ -31,15 +31,29 @@ def _additions_deletions_lines_files_per_commit():
                         'total_deletions': {'$sum': '$modifications.deletions'},
                         'total_modifications': {'$sum': 1},
                         'file_paths': {'$push': '$modifications.file_path'},
-                        'total_lines': {'$sum': {'$subtract': ['$modifications.additions',
-                                                               '$modifications.deletions']}}}}
-    out = {'$out': 'result_additions_deletions_lines_files_per_commit'}
+                        'total_lines': {'$sum': {'$add': ['$modifications.additions',
+                                                          '$modifications.deletions']}}}}
+    out = {'$out': 'result_additions_deletions_lines_modifications_per_commit'}
     pipeline = [unwind, projection, group, out]
 
     gitexplorer_database.commit_collection.aggregate(pipeline)
 
 
-def _additions_deletions_lines_commits_by_date():
+def _average_additions_deletions_lines_modifications_per_commit():
+    gitexplorer_database = get_gitexplorer_database()
+
+    group = {'$group': {'_id': None,
+                        'average_additions': {'$avg': '$total_additions'},
+                        'average_deletions': {'$avg': '$total_deletions'},
+                        'average_modifications': {'$avg': '$total_modifications'},
+                        'average_lines': {'$avg': '$total_lines'}}}
+    out = {'$out': 'result_average_additions_deletions_lines_modifications_per_commit'}
+    pipeline = [group, out]
+
+    gitexplorer_database.result_additions_deletions_lines_modifications_per_commit.aggregate(pipeline)
+
+
+def _additions_deletions_lines_modifications_commits_by_date():
     gitexplorer_database = get_gitexplorer_database()
 
     group = {'$group': {'_id': {'$dateToString': {'format': '%Y-%m-%d',
@@ -47,16 +61,40 @@ def _additions_deletions_lines_commits_by_date():
                         'date': {'$first': '$date'},
                         'total_additions': {'$sum': '$total_additions'},
                         'total_deletions': {'$sum': '$total_deletions'},
-                        'total_commits': {'$sum': 1}}}
-    out = {'$out': 'result_additions_deletions_lines_commits_by_date'}
+                        'total_commits': {'$sum': 1},
+                        'commits': {'$push': '$commit_hash'},
+                        'total_modifications': {'$sum': '$total_modifications'}}}
+    out = {'$out': 'result_additions_deletions_lines_modifications_commits_by_date'}
     pipeline = [group, out]
 
-    gitexplorer_database.result_additions_deletions_lines_files_per_commit.aggregate(pipeline)
+    gitexplorer_database.result_additions_deletions_lines_modifications_per_commit.aggregate(pipeline)
+
+
+def _average_additions_deletions_lines_modifications_by_date():
+    gitexplorer_database = get_gitexplorer_database()
+
+    projection = {'$project': {'_id': '$_id',
+                               'date': '$date',
+                               'average_additions': {'$divide': ['$total_additions',
+                                                                 '$total_commits']},
+                               'average_deletions': {'$divide': ['$total_deletions',
+                                                                 '$total_commits']},
+                               'average_lines': {'$divide': [{'$add': ['$total_additions',
+                                                                       '$total_deletions']},
+                                                             '$total_commits']},
+                               'average_modifications': {'$divide': ['$total_modifications',
+                                                                     '$total_commits']}}}
+    out = {'$out': 'result_average_additions_deletions_lines_modifications_by_date'}
+    pipeline = [projection, out]
+
+    gitexplorer_database.result_additions_deletions_lines_modifications_commits_by_date.aggregate(pipeline)
 
 
 def main():
-    _additions_deletions_lines_files_per_commit()
-    _additions_deletions_lines_commits_by_date()
+    _additions_deletions_lines_modifications_per_commit()
+    _additions_deletions_lines_modifications_commits_by_date()
+    _average_additions_deletions_lines_modifications_by_date()
+    _average_additions_deletions_lines_modifications_per_commit()
 
 
 if(__name__ == '__main__'):

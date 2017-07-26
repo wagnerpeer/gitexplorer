@@ -31,7 +31,9 @@ def _authors_per_file_path():
                         'modifications': {'$push': {"author": "$author",
                                                     "date": "$date",
                                                     "additions": "$additions",
-                                                    "deletions": "$deletions"}}}}
+                                                    "deletions": "$deletions",
+                                                    'lines': {'$add': ['$additions',
+                                                                       '$deletions']}}}}}
 
     out = {'$out': 'result_authors_per_file_path'}
 
