@@ -25,7 +25,7 @@ def get_gitexplorer_database():
     return client.gitexplorer_database
 
 
-def _additions_deletions_commits_by_file_path():
+def _additions_deletions_lines_commits_by_file_path():
     gitexplorer_database = get_gitexplorer_database()
 
     unwind = {'$unwind': '$details.modifications'}
@@ -35,15 +35,17 @@ def _additions_deletions_commits_by_file_path():
     group = {'$group': {'_id': '$file_path',
                         'total_commits': {'$sum': 1},
                         'total_additions': {'$sum': '$additions'},
-                        'total_deletions': {'$sum': '$deletions'}}}
-    out = {'$out': 'result_additions_deletions_commits_by_file_path'}
+                        'total_deletions': {'$sum': '$deletions'},
+                        'total_lines': {'$sum': {'$add': ['$additions',
+                                                          '$deletions']}}}}
+    out = {'$out': 'result_additions_deletions_lines_commits_by_file_path'}
     pipeline = [unwind, projection, group, out]
 
     gitexplorer_database.commit_collection.aggregate(pipeline)
 
 
 def main():
-    _additions_deletions_commits_by_file_path()
+    _additions_deletions_lines_commits_by_file_path()
 
 
 if(__name__ == '__main__'):
