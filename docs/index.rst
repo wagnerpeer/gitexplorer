@@ -1,10 +1,13 @@
 .. gitexplorer documentation master file, created by
    sphinx-quickstart on Sun Jul 23 12:28:17 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 Welcome to gitexplorer's documentation!
 =======================================
+
+.. image:: img/gitexplorer_logo.svg
+    :width: 300 px
+    :alt: gitexplorer logo
+    :align: center
 
 This project is intended to be a tool to extract basic information from any accessible git repository, make appealing
 visualizations like the GitHub graphs and therefore make exploration of repositories as easy as possible.
