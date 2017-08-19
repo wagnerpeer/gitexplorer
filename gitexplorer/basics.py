@@ -164,6 +164,18 @@ def get_log_information(directory, after='', before='HEAD'):
 def get_gitexplorer_database():
     '''Returns the MongoDB for gitexplorer.
 
+class GitExplorerBase(object):
+
+    @staticmethod
+    def get_gitexplorer_database():
+        '''Returns the MongoDB for gitexplorer.
+
+        The collections inside the database can be used as basis for specialized collections
+        from which one can derive elevated statistics. Results can also be written into the
+        database to be accessible by visualization routines.
+        '''
+        client = pymongo.MongoClient()
+        return client.gitexplorer_database
     The collections inside the database can be used as basis for specialized collections
     from which one can derive elevated statistics. Results can also be written into the
     database to be accessible by visualization routines.
@@ -174,6 +186,7 @@ def get_gitexplorer_database():
 
 def main(directory):
     gitexplorer_database = get_gitexplorer_database()
+    gitexplorer_database = GitExplorerBase.get_gitexplorer_database()
     gitexplorer_database.commit_collection.drop()
     gitexplorer_database.commit_collection.insert_many(get_log_information(directory))
 
