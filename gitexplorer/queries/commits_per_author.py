@@ -4,36 +4,38 @@ Created on 06.07.2017
 @author: Peer
 '''
 
-import pymongo
+from . import aggregation
 
 
-def get_gitexplorer_database():
-    '''Returns the MongoDB for gitexplorer.
+class CommitsPerAuthor(aggregation.AbstractAggregator):
 
-    The collections inside the database can be used as basis for specialized collections
-    from which one can derive elevated statistics. Results can also be written into the
-    database to be accessible by visualization routines.
-    '''
-    client = pymongo.MongoClient()
-    return client.gitexplorer_database
+    @classmethod
+    def provides(cls):
+        return 'commits_per_author'
 
+    @classmethod
+    def requires(cls):
+        return 'commit_collection'
 
-def _commits_per_author():
-    gitexplorer_database = get_gitexplorer_database()
+    def __init__(self):
 
-    projection = {'$project': {'author': '$author',
-                               'commit_hash': '$commit_hash'}}
-    group = {'$group': {'_id': '$author',
-                        'total_commits': {'$sum': 1},
-                        'commits': {'$push': '$commit_hash'}}}
-    out = {'$out': 'result_commits_per_author'}
-    pipeline = [projection, group, out]
+        self.output_database = 'result_' + self.provides()
+        self.input_database = self.requires()
 
-    gitexplorer_database.commit_collection.aggregate(pipeline)
+        projection = {'$project': {'author': '$author',
+                                   'commit_hash': '$commit_hash'}}
+
+        group = {'$group': {'_id': '$author',
+                            'total_commits': {'$sum': 1},
+                            'commits': {'$push': '$commit_hash'}}}
+
+        out = {'$out': self.output_database}
+
+        self.pipeline = [projection, group, out]
 
 
 def main():
-    _commits_per_author()
+    CommitsPerAuthor().run()
 
 
 if(__name__ == '__main__'):

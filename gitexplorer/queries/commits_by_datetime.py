@@ -4,47 +4,62 @@ Created on 05.07.2017
 @author: Peer
 '''
 
-import pymongo
+from . import aggregation
 
 
-def get_gitexplorer_database():
-    '''Returns the MongoDB for gitexplorer.
+class CommitsByDayOfWeek(aggregation.AbstractAggregator):
 
-    The collections inside the database can be used as basis for specialized collections
-    from which one can derive elevated statistics. Results can also be written into the
-    database to be accessible by visualization routines.
-    '''
-    client = pymongo.MongoClient()
-    return client.gitexplorer_database
+    @classmethod
+    def provides(cls):
+        return 'commits_by_day_of_week'
+
+    @classmethod
+    def requires(cls):
+        return 'commit_collection'
+
+    def __init__(self):
+
+        self.output_database = 'result_' + self.provides()
+        self.input_database = self.requires()
+
+        projection = {'$project': {'day_of_week': {'$isoDayOfWeek': '$date'}}}
+
+        group = {'$group': {'_id': '$day_of_week',
+                            'total_commits': {'$sum': 1}}}
+
+        out = {'$out': self.output_database}
+
+        self.pipeline = [projection, group, out]
 
 
-def _commits_by_day_of_week():
-    gitexplorer_database = get_gitexplorer_database()
+class CommitsByHourOfDay(aggregation.AbstractAggregator):
 
-    projection = {'$project': {'day_of_week': {'$isoDayOfWeek': '$date'}}}
-    group = {'$group': {'_id': '$day_of_week',
-                        'total_commits': {'$sum': 1}}}
-    out = {'$out': 'result_commits_by_day_of_week'}
-    pipeline = [projection, group, out]
+    @classmethod
+    def provides(cls):
+        return 'commits_by_hour_of_day'
 
-    gitexplorer_database.commit_collection.aggregate(pipeline)
+    @classmethod
+    def requires(cls):
+        return 'commit_collection'
 
+    def __init__(self):
 
-def _commits_by_hour_of_day():
-    gitexplorer_database = get_gitexplorer_database()
+        self.output_database = 'result_' + self.provides()
+        self.input_database = self.requires()
 
-    projection = {'$project': {'hour_of_day': {'$hour': '$date'}}}
-    group = {'$group': {'_id': '$hour_of_day',
-                        'total_commits': {'$sum': 1}}}
-    out = {'$out': 'result_commits_by_hour_of_day'}
-    pipeline = [projection, group, out]
+        projection = {'$project': {'hour_of_day': {'$hour': '$date'}}}
 
-    gitexplorer_database.commit_collection.aggregate(pipeline)
+        group = {'$group': {'_id': '$hour_of_day',
+                            'total_commits': {'$sum': 1}}}
+
+        out = {'$out': 'result_commits_by_hour_of_day'}
+
+        self.pipeline = [projection, group, out]
 
 
 def main():
-    _commits_by_day_of_week()
-    _commits_by_hour_of_day()
+    CommitsByDayOfWeek().run()
+    CommitsByHourOfDay().run()
 
 
 if(__name__ == '__main__'):

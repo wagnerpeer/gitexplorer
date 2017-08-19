@@ -4,46 +4,47 @@ Created on 24.07.2017
 @author: Peer
 '''
 
-import pymongo
+from . import aggregation
 
 
-def get_gitexplorer_database():
-    '''Returns the MongoDB for gitexplorer.
+class AuthorsPerFilePath(aggregation.AbstractAggregator):
 
-    The collections inside the database can be used as basis for specialized collections
-    from which one can derive elevated statistics. Results can also be written into the
-    database to be accessible by visualization routines.
-    '''
-    client = pymongo.MongoClient()
-    return client.gitexplorer_database
+    @classmethod
+    def provides(cls):
+        return 'authors_per_file_path'
 
+    @classmethod
+    def requires(cls):
+        return 'commit_collection'
 
-def _authors_per_file_path():
-    gitexplorer_database = get_gitexplorer_database()
+    def __init__(self):
 
-    unwind = {'$unwind': '$details.modifications'}
-    projection = {'$project': {'file_path': '$details.modifications.file_path',
-                               'author': '$author',
-                               'date': '$date',
-                               'additions': '$details.modifications.additions',
-                               'deletions': '$details.modifications.deletions'}}
-    group = {'$group': {'_id': '$file_path',
-                        'modifications': {'$push': {"author": "$author",
-                                                    "date": "$date",
-                                                    "additions": "$additions",
-                                                    "deletions": "$deletions",
-                                                    'lines': {'$add': ['$additions',
-                                                                       '$deletions']}}}}}
+        self.output_database = 'result_' + self.provides()
+        self.input_database = self.requires()
 
-    out = {'$out': 'result_authors_per_file_path'}
+        unwind = {'$unwind': '$details.modifications'}
 
-    pipeline = [unwind, projection, group, out]
+        projection = {'$project': {'file_path': '$details.modifications.file_path',
+                                   'author': '$author',
+                                   'date': '$date',
+                                   'additions': '$details.modifications.additions',
+                                   'deletions': '$details.modifications.deletions'}}
 
-    gitexplorer_database.commit_collection.aggregate(pipeline)
+        group = {'$group': {'_id': '$file_path',
+                            'modifications': {'$push': {"author": "$author",
+                                                        "date": "$date",
+                                                        "additions": "$additions",
+                                                        "deletions": "$deletions",
+                                                        'lines': {'$add': ['$additions',
+                                                                           '$deletions']}}}}}
+
+        out = {'$out': self.output_database}
+
+        self.pipeline = [unwind, projection, group, out]
 
 
 def main():
-    _authors_per_file_path()
+    AuthorsPerFilePath().run()
 
 
 if(__name__ == '__main__'):
