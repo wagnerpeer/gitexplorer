@@ -48,28 +48,3 @@ class GitExplorerBase(object):
             code = fid.read()
 
         return Code(code)
-
-
-def main(directory):
-    log = GitLogReader.get_log_information(directory)
-
-    gitexplorer_database = GitExplorerBase.get_gitexplorer_database()
-    gitexplorer_database.commit_collection.drop()
-    gitexplorer_database.commit_collection.insert_many(log)
-
-
-def _get_arguments():
-    parser = argparse.ArgumentParser(description='Parse configuration parameters for gitexplorer from command line arguments.')
-    parser.add_argument('directory',
-                        metavar='DIR',
-                        type=str,
-                        help='The repository to run gitexplorer in.')
-
-    return parser.parse_args()
-
-
-if(__name__ == '__main__'):
-
-    args = _get_arguments()
-
-    main(args.directory)
