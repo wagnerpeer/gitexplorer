@@ -9,7 +9,7 @@ import pathlib
 import re
 import subprocess
 
-from basics import GitExplorerBase as ge_base
+from .basics import GitExplorerBase as ge_base
 
 PATH_RENAME = re.compile('^(?P<prefix>[^{]*){?(?P<old>.*) => (?P<new>[^}]*)}?(?P<suffix>.*)$')
 PERMISSION_CHANGE = re.compile('(?P<old_permission>\d*) => (?P<new_permission>\d*)')
@@ -102,7 +102,7 @@ class GitLogAnalyzer(object):
 
 class GitLogReader(object):
 
-    def __init__(self, directory, after='', before='HEAD', analyzer=GitLogAnalyzer.__class__):
+    def __init__(self, directory, after='', before='HEAD', analyzer=GitLogAnalyzer):
         '''
         Parameters
         ----------
@@ -124,7 +124,7 @@ class GitLogReader(object):
         self.directory = directory
         self.after = after
         self.before = before
-        self.analyzer = analyzer
+        self.analyzer = analyzer()
 
     def get_log_information(self):
         '''Runs a "git log" command in the given directory and returns the parsed information.
@@ -133,10 +133,10 @@ class GitLogReader(object):
         os.chdir(self.directory)
 
         if(self.after):
-            after = ' --after={}'.format(self.after)
+            self.after = ' --after={}'.format(self.after)
 
         if(self.before):
-            before = ' --before={}'.format(self.before)
+            self.before = ' --before={}'.format(self.before)
 
         commits = subprocess.check_output('git log'
                                           ' --numstat'
@@ -145,8 +145,8 @@ class GitLogReader(object):
                                           ' --find-renames'
                                           ' --reverse'
                                           ' --pretty=format:"<gitexplorer>%H\t%aN\t%aE\t%at"'
-                                          + after
-                                          + before,
+                                          + self.after
+                                          + self.before,
                                           stderr=subprocess.STDOUT).decode("utf-8")
 
         commit_objects = []

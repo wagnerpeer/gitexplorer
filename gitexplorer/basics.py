@@ -10,7 +10,8 @@ import os
 import pathlib
 
 import pymongo
-from git_log_processing import GitLogReader
+
+from . import git_log_processing
 
 TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
                                    '$': '\uff04'})
