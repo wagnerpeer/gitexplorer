@@ -4,14 +4,11 @@ Created on 27.06.2017
 @author: Peer
 '''
 
-import argparse
 from bson.code import Code
 import os
 import pathlib
 
 import pymongo
-
-from . import git_log_processing
 
 TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
                                    '$': '\uff04'})

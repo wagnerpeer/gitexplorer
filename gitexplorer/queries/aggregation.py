@@ -7,7 +7,16 @@ Created on 15.08.2017
 from .. import basics
 
 
-class AbstractAggregator(basics.GitExplorerBase):
+class AggregatorRegistry(type):
+
+    aggregator_classes = []
+
+    def __init__(cls, name, _bases, _attributes):
+        if name != 'AbstractAggregator':
+            AggregatorRegistry.aggregator_classes.append(cls)
+
+
+class AbstractAggregator(basics.GitExplorerBase, metaclass=AggregatorRegistry):
 
     def provides(self) -> str:
         raise NotImplementedError()
