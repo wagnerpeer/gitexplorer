@@ -37,6 +37,7 @@ class LexicographicSorter(AbstractSorter):
 
 
 def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=0):
+def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
     '''Draw chord diagram [1]_ from input data.
 
     Parameters
@@ -51,6 +52,25 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=0):
     '''
     if len(data['nodes']) == 0:
         return
+
+    new_edges = {}
+    for edge, value in data['edges'].items():
+        if(value > aggregate_below):
+            new_edges[edge] = value
+
+    data['edges'] = new_edges
+
+    active_nodes = set()
+    for source, target in data['edges'].keys():
+        active_nodes.add(source)
+        active_nodes.add(target)
+
+    new_nodes = {}
+    for node, value in data['nodes'].items():
+        if(node in active_nodes):
+            new_nodes[node] = value
+
+    data['nodes'] = new_nodes
 
     data['nodes'], data['edges'] = sorter.sort(data['nodes'], data['edges'])
 
@@ -75,8 +95,8 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=0):
                                      height=2 * radius,
                                      width=2 * radius,
                                      angle=0.0,
-                                     theta1=start,
-                                     theta2=end - 2.0,
+                                     theta1=start + 1.0,
+                                     theta2=end - 1.0,
                                      linewidth=8,
                                      color=next(color))
 
@@ -88,6 +108,8 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=0):
     max_edge_weight = float(max(data['edges'].values()))
 
     for (source, target), weight in data['edges'].items():
+        if(node_position[source] >= node_position[target]):
+            node_position[source], node_position[target] = node_position[target], node_position[source]
         source_x = math.cos(node_position[source]) * radius * 0.92
         source_y = math.sin(node_position[source]) * radius * 0.92
 
