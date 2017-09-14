@@ -30,13 +30,117 @@ class LexicographicSorter(AbstractSorter):
         nodes = OrderedDict(sorted(nodes.items(), key=lambda node: node[0]))
         edges = OrderedDict(sorted(edges.items(), key=lambda edge: edge[0][0]))
 
-#         for items in zip(nodes.items(), edges.items()):
-#             print(items)
-
         return nodes, edges
 
 
-def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=0):
+class MinimumLengthSorter(AbstractSorter):
+
+    @staticmethod
+    def sort(nodes, edges):
+
+        import numpy as np
+
+        combinations = itertools.combinations(range(len(nodes)), r=len(nodes))
+        index_to_node = {idx: edge for idx, edge in enumerate(nodes.keys())}
+
+        min_combination = None
+        min_combination_weight = 2e32
+
+        node_pos = np.arange(1.0 * len(nodes)) / len(nodes)
+
+        for combination in combinations:
+            combination_weight = 0.0
+
+            for source in combination:
+                for target in combination:
+                    edge_weight = edges.get((index_to_node[source], index_to_node[target]))
+                    if(edge_weight is not None):
+                        combination_weight += ((node_pos[source] - node_pos[target]) % 1.0)# * edge_weight
+
+            if(combination_weight <= min_combination_weight):
+                min_combination_weight = combination_weight
+                min_combination = combination
+
+        new_nodes = OrderedDict()
+        for node_idx in min_combination:
+            new_nodes[index_to_node[node_idx]] = nodes[index_to_node[node_idx]]
+
+        return new_nodes, edges
+
+
+class MinimizeCrossingsSorter(AbstractSorter):
+
+    @staticmethod
+    def sort(nodes, edges):
+        import numpy as np
+
+        def find_nearest(array, value):
+            idx = (np.abs(array - value)).argmin()
+            return idx
+
+        size = len(nodes)
+
+        node_order = {node_name: idx for idx, node_name in enumerate(nodes.keys())}
+
+        relationship_matrix = np.zeros((size, size))
+
+        for (source, target), weight in edges.items():
+            relationship_matrix[node_order[source], node_order[target]] = 1
+
+        lstsq_relationship = -np.linalg.lstsq(relationship_matrix,
+                                              np.ones((size,)))[0]
+
+        lstsq_relationship -= lstsq_relationship.min()
+        lstsq_relationship /= lstsq_relationship.max()
+        lstsq_relationship *= size
+
+        sorting_indices = list(range(size))
+        inverse_node_order = {idx: node_name for idx, node_name in zip(node_order.values(), node_order.keys())}
+        new_nodes = OrderedDict()
+
+        for value in lstsq_relationship:
+            idx = sorting_indices.pop(find_nearest(sorting_indices, value))
+            node_name = inverse_node_order[idx]
+            new_nodes[node_name] = nodes[node_name]
+
+        return new_nodes, edges
+
+
+class MinimizeCrossingsSorterPinv(AbstractSorter):
+
+    @staticmethod
+    def sort(nodes, edges):
+        import numpy as np
+
+        def find_nearest(array, value):
+            idx = (np.abs(array - value)).argmin()
+            return idx
+
+        size = len(nodes)
+
+        node_order = {node_name: idx for idx, node_name in enumerate(nodes.keys())}
+
+        relationship_matrix = np.zeros((size, size))
+
+        for (source, target), weight in edges.items():
+            relationship_matrix[node_order[source], node_order[target]] = 1
+
+        pseudo_inverse = np.linalg.pinv(relationship_matrix)
+
+        lstsq_relationship = np.dot(pseudo_inverse, np.ones((size,)))
+
+        sorting_indices = list(range(size))
+        inverse_node_order = {idx: node_name for idx, node_name in zip(node_order.values(), node_order.keys())}
+        new_nodes = OrderedDict()
+
+        for value in lstsq_relationship:
+            idx = sorting_indices.pop(find_nearest(sorting_indices, value))
+            node_name = inverse_node_order[idx]
+            new_nodes[node_name] = nodes[node_name]
+
+        return new_nodes, edges
+
+
 def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
     '''Draw chord diagram [1]_ from input data.
 
@@ -196,5 +300,9 @@ def find_commits(reference_day=datetime.datetime.today(),
 if(__name__ == '__main__'):
 
     draw_chord_diagram(collect_data(find_commits(days_before_reference=30,
-                                                 number_of_commits=None)),
-                       aggregate_below=0)
+#                                                  reference_day=datetime.datetime(day=1, month=1, year=2012),
+                                                 number_of_commits=150)),
+#                         sorter=MinimumLengthSorter,
+                        sorter=MinimizeCrossingsSorterPinv,
+#                         sorter=MinimizeCrossingsSorter,
+                       aggregate_below=2)
