@@ -33,7 +33,10 @@ def main(directory):
     gitexplorer_database.commit_collection.drop()
     gitexplorer_database.commit_collection.insert_many(log)
 
-    aggregations = queries.discover_queries()
+    queries.AggregatorRegistry.load('gitexplorer.queries.authors_per_file')
+
+    aggregations = list(map(queries.AggregatorRegistry.get,
+                            ['authors_per_file_path']))
     dependencies = nx.DiGraph()
 
     for aggregation in aggregations:

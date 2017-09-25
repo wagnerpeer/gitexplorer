@@ -4,16 +4,31 @@ Created on 15.08.2017
 @author: Peer Wagner
 '''
 
-from .. import basics
+import importlib
+
+from gitexplorer import basics
 
 
 class AggregatorRegistry(type):
 
-    aggregator_classes = []
+    aggregators = {}
 
-    def __init__(cls, name, _bases, _attributes):
-        if name != 'AbstractAggregator':
-            AggregatorRegistry.aggregator_classes.append(cls)
+    def __new__(cls, name, bases, dct):
+        cls_obj = super(AggregatorRegistry, cls).__new__(cls, name, bases, dct)
+
+        if(isinstance(cls_obj.name, str)):
+            cls.aggregators[cls_obj.name] = cls_obj
+
+        return cls_obj
+
+    @classmethod
+    def get(cls, name):
+        return cls.aggregators[name]
+
+    @classmethod
+    def load(cls, *aggregator_modules):
+        for aggregator_module in aggregator_modules:
+            importlib.import_module(aggregator_module)
 
 
 class AbstractAggregator(basics.GitExplorerBase, metaclass=AggregatorRegistry):
