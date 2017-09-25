@@ -10,10 +10,9 @@ import pathlib
 
 import pymongo
 
-TRANSLATION_TABLE = str.maketrans({'.': '\uff0e',
-                                   '$': '\uff04'})
-INVERSE_TRANSLATION_TABLE = str.maketrans({'\uff0e': '.',
-                                           '\uff04': '$'})
+
+TRANSLATION_TABLE = (('.', '\uff0e'),
+                     ('$', '\uff04'))
 
 
 class GitExplorerBase(object):
@@ -31,11 +30,15 @@ class GitExplorerBase(object):
 
     @staticmethod
     def _mongodb_escape(input_string):
-        return input_string.translate(TRANSLATION_TABLE)
+        for translation in TRANSLATION_TABLE:
+            input_string = input_string.replace(translation[0], translation[1])
+        return input_string
 
     @staticmethod
     def _mongodb_unescape(input_string):
-        return input_string.translate(INVERSE_TRANSLATION_TABLE)
+        for translation in TRANSLATION_TABLE:
+            input_string = input_string.replace(translation[1], translation[0])
+        return input_string
 
     @staticmethod
     def _get_code(file_name):

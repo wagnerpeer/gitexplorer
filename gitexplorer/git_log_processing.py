@@ -10,6 +10,8 @@ import pathlib
 import re
 import subprocess
 
+from .basics import GitExplorerBase as ge_base
+
 PATH_RENAME = re.compile('^(?P<prefix>[^{]*){?(?P<old>.*) => (?P<new>[^}]*)}?(?P<suffix>.*)$')
 PERMISSION_CHANGE = re.compile('(?P<old_permission>\d*) => (?P<new_permission>\d*)')
 
@@ -36,7 +38,7 @@ class GitLogAnalyzer(object):
                 if(line.startswith(('create', 'delete'))):
                     action, _, permission, file_path = line.split(' ', maxsplit=3)
                     create_delete = {'permission': int(permission),
-                                     'file_path': file_path,
+                                     'file_path': ge_base._mongodb_escape(file_path),
                                      'extension': pathlib.PurePath(file_path).suffix}
                     details_dict[action].append(create_delete)
                 elif(line.startswith('rename')):
@@ -52,9 +54,9 @@ class GitLogAnalyzer(object):
                     old_file_path = paths_match.group('prefix') + paths_match.group('old') + paths_match.group('suffix')
                     new_file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
-                    rename = {'new_path': new_file_path,
+                    rename = {'new_path': ge_base._mongodb_escape(new_file_path),
                               'new_extension': pathlib.PurePath(new_file_path).suffix,
-                              'old_path': old_file_path,
+                              'old_path': ge_base._mongodb_escape(old_file_path),
                               'old_extension': pathlib.PurePath(old_file_path).suffix,
                               'match': int(match.strip('(%)'))}
                     details_dict['rename'].append(rename)
@@ -74,7 +76,7 @@ class GitLogAnalyzer(object):
                     change = {'old_permission': int(old_permission),
                               'new_permission': int(new_permission)}
 
-                    details_dict['change'][file_path] = change
+                    details_dict['change'][ge_base._mongodb_escape(file_path)] = change
                 elif(line[0] in '1234567890-'):
                     additions, deletions, file_path = line.split('\t', maxsplit=2)
 
@@ -88,11 +90,11 @@ class GitLogAnalyzer(object):
                         file_path = paths_match.group('prefix') + paths_match.group('new') + paths_match.group('suffix')
 
                     if(additions == '-'):
-                        modifications = {'file_path': file_path,
+                        modifications = {'file_path': ge_base._mongodb_escape(file_path),
                                          'additions': None,
                                          'deletions': None}
                     else:
-                        modifications = {'file_path': file_path,
+                        modifications = {'file_path': ge_base._mongodb_escape(file_path),
                                          'additions': int(additions),
                                          'deletions': int(deletions)}
                     details_dict['modifications'].append(modifications)
@@ -110,8 +112,6 @@ class GitLogAnalyzer(object):
 
             if(additional_information):
                 cls.logger.warning('Unexpected additional information: "{}"'.format(additional_information))
-            else:
-                cls.logger.info('Unexpected additional information: "{}"'.format(additional_information))
 
             commit_dict['commit_hash'] = commit_hash
             commit_dict['author'] = author_name
