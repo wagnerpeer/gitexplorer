@@ -18,6 +18,10 @@ class AggregatorRegistry(type):
 
 class AbstractAggregator(basics.GitExplorerBase, metaclass=AggregatorRegistry):
 
+    @property
+    def name(self):
+        raise NotImplementedError()
+
     def provides(self) -> str:
         raise NotImplementedError()
 

@@ -9,6 +9,8 @@ from . import aggregation
 
 class AdditionsDeletionsLinesCommitsByFilePath(aggregation.AbstractAggregator):
 
+    name = 'additions_deletions_lines_commits_by_file_path'
+
     @classmethod
     def provides(cls):
         return 'additions_deletions_lines_commits_by_file_path'

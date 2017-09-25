@@ -9,6 +9,8 @@ from . import aggregation
 
 class AuthorsPerFilePath(aggregation.AbstractAggregator):
 
+    name = 'authors_per_file_path'
+
     @classmethod
     def provides(cls):
         return 'authors_per_file_path'

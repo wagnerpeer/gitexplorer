@@ -9,6 +9,8 @@ from . import aggregation
 
 class AdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractAggregator):
 
+    name = 'additions_deletions_lines_modifications_per_commit'
+
     @classmethod
     def provides(cls):
         return 'additions_deletions_lines_modifications_per_commit'
@@ -42,6 +44,8 @@ class AdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractA
 
 class AverageAdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractAggregator):
 
+    name = 'average_additions_deletions_lines_modifications_per_commit'
+
     @classmethod
     def provides(cls):
         return 'average_additions_deletions_lines_modifications_per_commit'
@@ -67,6 +71,8 @@ class AverageAdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.Ab
 
 
 class AdditionsDeletionsLinesCommitsModificationsCommitsByDate(aggregation.AbstractAggregator):
+
+    name = 'additions_deletions_lines_modifications_commits_by_date'
 
     @classmethod
     def provides(cls):
@@ -96,6 +102,8 @@ class AdditionsDeletionsLinesCommitsModificationsCommitsByDate(aggregation.Abstr
 
 
 class AverageAdditionsDeletionsLinesCommitsModificationsByDate(aggregation.AbstractAggregator):
+
+    name = 'average_additions_deletions_lines_modifications_by_date'
 
     @classmethod
     def provides(cls):

@@ -9,6 +9,8 @@ from . import aggregation
 
 class CommitsPerAuthor(aggregation.AbstractAggregator):
 
+    name = 'commits_per_author'
+
     @classmethod
     def provides(cls):
         return 'commits_per_author'

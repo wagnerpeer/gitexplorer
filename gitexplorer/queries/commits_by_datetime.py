@@ -9,6 +9,8 @@ from . import aggregation
 
 class CommitsByDayOfWeek(aggregation.AbstractAggregator):
 
+    name = 'commits_by_day_of_week'
+
     @classmethod
     def provides(cls):
         return 'commits_by_day_of_week'
@@ -33,6 +35,8 @@ class CommitsByDayOfWeek(aggregation.AbstractAggregator):
 
 
 class CommitsByHourOfDay(aggregation.AbstractAggregator):
+
+    name = 'commits_by_hour_of_day'
 
     @classmethod
     def provides(cls):
