@@ -4,8 +4,13 @@ Created on 28.08.2017
 @author: Peer
 '''
 
+from collections import defaultdict
+import datetime
 from itertools import chain
+
 import matplotlib.pyplot as plt
+
+from gitexplorer.basics import GitExplorerBase
 
 
 def draw_punchcard(infos,
@@ -52,13 +57,52 @@ def draw_punchcard(infos,
     plt.tight_layout()
 
 
-if(__name__ == '__main__'):
-    import numpy as np
-    hours = np.random.randint(0, 24, 1000)
-    days = np.random.randint(0, 7, 1000)
-    commits = np.random.randint(10, 100, 1000)
+def collect_data(commits):
+    '''
+    '''
 
-    infos = {key: value for key, value in zip(zip(days, hours), commits)}
+    information = defaultdict(int)
+
+    for commit in commits:
+        information[(commit['date'].isoweekday() - 1, commit['date'].hour)] += 1
+
+    return information
+
+
+def find_commits(reference_day=datetime.datetime.today(),
+                 days_before_reference=30,
+                 number_of_commits=None):
+    '''Load commits from database meeting certain conditions.
+
+    Parameters
+    ----------
+    days_before_reference: int (>=0), optional
+        Limit commits to number of days before reference_day
+    number_of_commits: int (>=0), optional
+        Limit the number of commits. If given it takes precedence before days_before_today.
+
+    Returns
+    -------
+    Documents meeting criteria defined through parameters
+    '''
+    criteria = {}
+
+    if(number_of_commits is None):
+        datetime_limit = reference_day - datetime.timedelta(days=days_before_reference)
+        criteria = {'date': {'$lte': reference_day, '$gte': datetime_limit}}
+
+    gitexplorer_database = GitExplorerBase.get_gitexplorer_database()
+    cursor = gitexplorer_database['commit_collection'].find(criteria)
+
+    if(number_of_commits is not None):
+        cursor = cursor.limit(number_of_commits)
+
+    return cursor
+
+
+if(__name__ == '__main__'):
+    infos = collect_data(find_commits(days_before_reference=90,
+                                      number_of_commits=None))
 
     draw_punchcard(infos)
     plt.show()
