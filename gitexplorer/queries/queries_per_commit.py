@@ -7,7 +7,7 @@ Created on 06.07.2017
 from . import aggregation
 
 
-class AdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractAggregator):
+class AdditionsDeletionsLinesModificationsPerCommit(aggregation.AbstractAggregator):
 
     name = 'additions_deletions_lines_modifications_per_commit'
 
@@ -42,7 +42,7 @@ class AdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractA
         self.pipeline = [unwind, projection, group, out]
 
 
-class AverageAdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.AbstractAggregator):
+class AverageAdditionsDeletionsLinesModificationsPerCommit(aggregation.AbstractAggregator):
 
     name = 'average_additions_deletions_lines_modifications_per_commit'
 
@@ -70,7 +70,7 @@ class AverageAdditionsDeletionsLinesCommitsModificationsPerCommit(aggregation.Ab
         self.pipeline = [group, out]
 
 
-class AdditionsDeletionsLinesCommitsModificationsCommitsByDate(aggregation.AbstractAggregator):
+class AdditionsDeletionsLinesModificationsCommitsByDate(aggregation.AbstractAggregator):
 
     name = 'additions_deletions_lines_modifications_commits_by_date'
 
@@ -101,13 +101,13 @@ class AdditionsDeletionsLinesCommitsModificationsCommitsByDate(aggregation.Abstr
         self.pipeline = [group, out]
 
 
-class AverageAdditionsDeletionsLinesCommitsModificationsByDate(aggregation.AbstractAggregator):
+class AverageAdditionsDeletionsLinesModificationsCommitsByDate(aggregation.AbstractAggregator):
 
-    name = 'average_additions_deletions_lines_modifications_by_date'
+    name = 'average_additions_deletions_lines_modifications_commits_by_date'
 
     @classmethod
     def provides(cls):
-        return 'average_additions_deletions_lines_modifications_by_date'
+        return 'average_additions_deletions_lines_modifications_commits_by_date'
 
     @classmethod
     def requires(cls):
@@ -136,10 +136,10 @@ class AverageAdditionsDeletionsLinesCommitsModificationsByDate(aggregation.Abstr
 
 
 def main():
-    AdditionsDeletionsLinesCommitsModificationsPerCommit().run()
-    AdditionsDeletionsLinesCommitsModificationsCommitsByDate().run()
-    AverageAdditionsDeletionsLinesCommitsModificationsByDate().run()
-    AverageAdditionsDeletionsLinesCommitsModificationsPerCommit().run()
+    AdditionsDeletionsLinesModificationsPerCommit().run()
+    AverageAdditionsDeletionsLinesModificationsPerCommit().run()
+    AdditionsDeletionsLinesModificationsCommitsByDate().run()
+    AverageAdditionsDeletionsLinesModificationsCommitsByDate().run()
 
 
 if(__name__ == '__main__'):
