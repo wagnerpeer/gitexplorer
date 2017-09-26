@@ -189,6 +189,9 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
     start = 0.0
     radius = 50
 
+    inner_margin = 0.15
+    outer_margin = 0.15
+
     node_position = {}
 
     for node_name, node_value in data['nodes'].items():
@@ -206,7 +209,36 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
 
         axes.add_artist(arc)
 
-        node_position[node_name] = math.radians((start + end) / 2.0)
+        position = ((start + end) / 2.0) % 360.0
+
+        if(position < 90):
+            halignment = 'left'
+            valignment = 'bottom'
+            rotation = position
+        elif(position < 180):
+            halignment = 'right'
+            valignment = 'bottom'
+            rotation = position + 180
+        elif(position < 270):
+            halignment = 'right'
+            valignment = 'top'
+            rotation = position + 180
+        elif(position < 360):
+            halignment = 'left'
+            valignment = 'top'
+            rotation = position
+
+        axes.annotate(node_name,
+                      xy=(math.radians(position), radius * (1.0 + outer_margin)),
+                      xycoords='polar',
+                      rotation=rotation,
+                      horizontalalignment=halignment,
+                      verticalalignment=valignment,
+                      )
+
+        axes.axis('off')
+
+        node_position[node_name] = math.radians(position)
         start = end
 
     max_edge_weight = float(max(data['edges'].values()))
@@ -214,11 +246,11 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
     for (source, target), weight in data['edges'].items():
         if(node_position[source] >= node_position[target]):
             node_position[source], node_position[target] = node_position[target], node_position[source]
-        source_x = math.cos(node_position[source]) * radius * 0.92
-        source_y = math.sin(node_position[source]) * radius * 0.92
+        source_x = math.cos(node_position[source]) * radius * (1.0 - inner_margin)
+        source_y = math.sin(node_position[source]) * radius * (1.0 - inner_margin)
 
-        target_x = math.cos(node_position[target]) * radius * 0.92
-        target_y = math.sin(node_position[target]) * radius * 0.92
+        target_x = math.cos(node_position[target]) * radius * (1.0 - inner_margin)
+        target_y = math.sin(node_position[target]) * radius * (1.0 - inner_margin)
 
         distance = math.sqrt((source_x - target_x) ** 2 + (source_y - target_y) ** 2)
 
@@ -231,14 +263,14 @@ def draw_chord_diagram(data, sorter=LexicographicSorter, aggregate_below=1):
                                                         xyB=(target_x, target_y),
                                                         coordsA='data',
                                                         connectionstyle=connection_style,
-                                                        linewidth=16 * weight / max_edge_weight,
+                                                        linewidth=8.0 * weight / max_edge_weight,
                                                         color='grey',
                                                         alpha=0.6,
                                                         capstyle='butt')
 
         axes.add_artist(connection)
 
-    margin = 10
+    margin = 100
     axes.set_xlim([-radius - margin, radius + margin])
     axes.set_ylim([-radius - margin, radius + margin])
 
