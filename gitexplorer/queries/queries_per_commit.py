@@ -19,12 +19,32 @@ class AdditionsDeletionsLinesModificationsPerCommit(aggregation.AbstractAggregat
     def requires(cls):
         return 'commit_collection'
 
-    def __init__(self):
+    def __init__(self, authors=None, extensions=None):
+        super(AdditionsDeletionsLinesModificationsPerCommit, self).__init__()
 
         self.output_database = 'result_' + self.provides()
         self.input_database = self.requires()
 
+        if(authors):
+            authors_chained = []
+            for author in authors:
+                authors_chained.append({'author': author})
+
+            match_authors = {'$match': {'$or': authors_chained}}
+            self.pipeline.append(match_authors)
+
         unwind = {'$unwind': '$details.modifications'}
+
+        self.pipeline.append(unwind)
+
+        if(extensions):
+            extensions_chained = []
+            for extension in extensions:
+                extensions_chained.append({'details.modifications.extension': extension})
+
+            match_extensions = {'$match': {'$or': extensions_chained}}
+            self.pipeline.append(match_extensions)
+
         projection = {'$project': {'commit_hash': '$commit_hash',
                                    'date': '$date',
                                    'modifications': '$details.modifications'}}
@@ -39,7 +59,7 @@ class AdditionsDeletionsLinesModificationsPerCommit(aggregation.AbstractAggregat
 
         out = {'$out': self.output_database}
 
-        self.pipeline = [unwind, projection, group, out]
+        self.pipeline += [projection, group, out]
 
 
 class AverageAdditionsDeletionsLinesModificationsPerCommit(aggregation.AbstractAggregator):

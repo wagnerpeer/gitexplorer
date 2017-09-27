@@ -33,6 +33,9 @@ class AggregatorRegistry(type):
 
 class AbstractAggregator(basics.GitExplorerBase, metaclass=AggregatorRegistry):
 
+    def __init__(self):
+        self.pipeline = []
+
     @property
     def name(self):
         raise NotImplementedError()
