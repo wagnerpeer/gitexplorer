@@ -91,10 +91,12 @@ class GitLogAnalyzer(object):
 
                     if(additions == '-'):
                         modifications = {'file_path': ge_base._mongodb_escape(file_path),
+                                         'extension': pathlib.PurePath(file_path).suffix,
                                          'additions': None,
                                          'deletions': None}
                     else:
                         modifications = {'file_path': ge_base._mongodb_escape(file_path),
+                                         'extension': pathlib.PurePath(file_path).suffix,
                                          'additions': int(additions),
                                          'deletions': int(deletions)}
                     details_dict['modifications'].append(modifications)
