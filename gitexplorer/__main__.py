@@ -56,7 +56,8 @@ def main(directory):
         provides = aggregation.provides()
         dependencies.add_edge(provides, aggregation.requires())
 
-    sorted_dependencies = nx.topological_sort(dependencies, reverse=True)
+    sorted_dependencies = list(reversed(list(nx.topological_sort(dependencies))))
+
 
     print(sorted_dependencies)
 
