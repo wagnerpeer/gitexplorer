@@ -129,82 +129,91 @@ class GitLogAnalyzer(object):
 
 class GitLogReader(object):
     output_schema = {
-        'commit_hash': {
-            'type': 'string',
-            'pattern': '[a-fA-F0-9]{7,40}'},
-        'author': {'type': 'string'},
-        'mail': {'type': 'email'},
-        'date': {'type': 'date-time'},
-        'details': {
-            'type': 'object',
-            'properties': {
-                'create': {'type': 'array',
-                           'uniqueItems': True,
-                           'items': {
-                               'type': 'object',
-                               'properties': {
-                                   'file_path': {
-                                       'type': 'string',
-                                       'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
-                                   'permission': {
-                                       'type': 'integer',
-                                       'minimum': 0,
-                                       'maximum': 134217727},
-                                   'extension': {'type': 'string'}}}},
-                'delete': {'type': 'array',
-                           'uniqueItems': True,
-                           'items': {
-                               'type': 'object',
-                               'properties': {
-                                   'file_path': {
-                                       'type': 'string',
-                                       'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
-                                   'permission': {
-                                       'type': 'integer',
-                                       'minimum': 0,
-                                       'maximum': 134217727}}}},
-                'rename': {'type': 'array',
-                           'uniqueItems': True,
-                           'items': {
-                               'type': 'object',
-                               'properties': {
-                                   'new_path': {
-                                       'type': 'string',
-                                       'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
-                                   'extension': {'type': 'string'},
-                                   'old_path': {
-                                       'type': 'string',
-                                       'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
-                                   'match': {
-                                       'type': 'integer',
-                                       'minimum': 0,
-                                       'maximum': 100}}}},
-                'change': {
-                    'type': 'object',
-                    'patternProperties': {
-                        '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))': {
+        '$schema': 'http://json-schema.org/draft-06/schema#',
+        'title': 'Commit Info',
+        'description': 'Information about one single commit',
+        'type': 'object',
+        'properties': {
+            'commit_hash': {
+                'type': 'string',
+                'pattern': '[a-fA-F0-9]{7,40}'},
+            'author': {'type': 'string'},
+            'mail': {
+                'type': 'string',
+                'format': 'email'},
+            'date': {
+                'type': 'string',
+                'format': 'date-time'},
+            'details': {
+                'type': 'object',
+                'properties': {
+                    'create': {'type': 'array',
+                               'uniqueItems': True,
+                               'items': {
+                                   'type': 'object',
+                                   'properties': {
+                                       'file_path': {
+                                           'type': 'string',
+                                           'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
+                                       'permission': {
+                                           'type': 'integer',
+                                           'minimum': 0,
+                                           'maximum': 134217727},
+                                       'extension': {'type': 'string'}}}},
+                    'delete': {'type': 'array',
+                               'uniqueItems': True,
+                               'items': {
+                                   'type': 'object',
+                                   'properties': {
+                                       'file_path': {
+                                           'type': 'string',
+                                           'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
+                                       'permission': {
+                                           'type': 'integer',
+                                           'minimum': 0,
+                                           'maximum': 134217727}}}},
+                    'rename': {'type': 'array',
+                               'uniqueItems': True,
+                               'items': {
+                                   'type': 'object',
+                                   'properties': {
+                                       'new_path': {
+                                           'type': 'string',
+                                           'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
+                                       'extension': {'type': 'string'},
+                                       'old_path': {
+                                           'type': 'string',
+                                           'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
+                                       'match': {
+                                           'type': 'integer',
+                                           'minimum': 0,
+                                           'maximum': 100}}}},
+                    'change': {
+                        'type': 'object',
+                        'patternProperties': {
+                            '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))': {
+                                'type': 'object',
+                                'properties': {
+                                    'old_permission': {
+                                        'type': 'integer',
+                                        'minimum': 0,
+                                        'maximum': 134217727},
+                                    'new_permission': {
+                                        'type': 'integer',
+                                        'minimum': 0,
+                                        'maximum': 134217727}}}}},
+                    'modifications': {
+                        'type': 'array',
+                        'items': {
                             'type': 'object',
                             'properties': {
-                                'old_permission': {
-                                    'type': 'integer',
-                                    'minimum': 0,
-                                    'maximum': 134217727},
-                                'new_permission': {
-                                    'type': 'integer',
-                                    'minimum': 0,
-                                    'maximum': 134217727}}}}},
-                'modifications': {
-                    'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'file_path': {
-                                'type': 'string',
-                                'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
-                            'additions': {'type': {
-                                'enum': ['null', 'integer']}},
-                            'deletions': {'type': {
-                                'enum': ['null', 'integer']}}}}}}}}
+                                'file_path': {
+                                    'type': 'string',
+                                    'pattern': '^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))'},
+                                'additions': {
+                                    'type': ['null', 'integer']},
+                                'deletions': {
+                                    'type': ['null', 'integer']}}}}}}}}
 
     def __init__(self, directory, after='', before='HEAD', analyzer=GitLogAnalyzer):
         """
