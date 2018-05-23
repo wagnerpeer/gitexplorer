@@ -13,7 +13,7 @@ import subprocess
 from .basics import GitExplorerBase as ge_base
 
 PATH_RENAME = re.compile('^(?P<prefix>[^{]*){?(?P<old>.*) => (?P<new>[^}]*)}?(?P<suffix>.*)$')
-PERMISSION_CHANGE = re.compile('(?P<old_permission>\d*) => (?P<new_permission>\d*)')
+PERMISSION_CHANGE = re.compile('mode (?P<action>\S*) (?P<old_permission>\d*) => (?P<new_permission>\d*).?(?P<file_path>\S*)')
 
 
 class GitLogAnalyzer(object):
@@ -60,18 +60,15 @@ class GitLogAnalyzer(object):
                               'match': int(match.strip('(%)'))}
                     details_dict['rename'].append(rename)
                 elif line.startswith('mode change'):
-                    _, action, permission_change_and_filename = line.split(' ', maxsplit=2)
-                    permission_change, file_path = permission_change_and_filename.rsplit(' ', maxsplit=1)
+                    permission_change_match = PERMISSION_CHANGE.search(line)
 
-                    permission_change_match = PERMISSION_CHANGE.search(permission_change)
-
-                    if permission_change is None:
+                    if permission_change_match is None:
                         cls.logger.warning(
                             'Unparsable permission change in commit {} detected: "{}"'.format(commit_hash, line))
-                        continue
 
                     old_permission = permission_change_match.group('old_permission')
                     new_permission = permission_change_match.group('new_permission')
+                    file_path = permission_change_match.group('file_path')
 
                     change = {'old_permission': int(old_permission),
                               'new_permission': int(new_permission)}
